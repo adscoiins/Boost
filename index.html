@@ -147,6 +147,7 @@
             <i class="fas fa-star"></i>
         </div>
     </div>
+    <div id="usernameDisplay">Welcome, <span id="username"></span></div>
     <div id="starsDisplay">Your Stars: 10,000</div>
     
     <div class="button" onclick="openModal(50000, 1000)">
@@ -200,6 +201,9 @@
         let starsRequired = 0;
 
         window.onload = function() {
+            const username = localStorage.getItem('username') || 'Guest';
+            document.getElementById('username').innerText = username;
+
             if (localStorage.getItem('stars') === null) {
                 localStorage.setItem('stars', 10000);
             }
@@ -221,23 +225,39 @@
 
         function confirmPurchase() {
             let totalStars = parseInt(localStorage.getItem('stars')) || 0;
-            
+
             if (totalStars >= starsRequired) {
-                totalStars -= starsRequired;
-                localStorage.setItem('stars', totalStars);
+                fetch('process_payment.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `starsRequired=${starsRequired}&pointsToBuy=${pointsToBuy}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        localStorage.setItem('stars', totalStars - starsRequired);
+                        let totalPoints = parseInt(localStorage.getItem('points')) || 0;
+                        totalPoints += pointsToBuy;
+                        localStorage.setItem('points', totalPoints);
 
-                let totalPoints = parseInt(localStorage.getItem('points')) || 0;
-                totalPoints += pointsToBuy;
-                localStorage.setItem('points', totalPoints);
+                        if (window.updatePointsDisplay) {
+                            window.updatePointsDisplay(totalPoints);
+                        }
 
-                if (window.updatePointsDisplay) {
-                    window.updatePointsDisplay(totalPoints);
-                }
-
-                showNotification(`You have purchased ${pointsToBuy} points! You now have ${totalPoints.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} points and ${totalStars.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} stars left.`);
-                updateStarsDisplay();
+                        showNotification(data.message);
+                        updateStarsDisplay();
+                    } else {
+                        showNotification(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification("حدث خطأ أثناء المعالجة.");
+                });
             } else {
-                showNotification("You do not have enough Telegram Stars to complete this purchase.");
+                showNotification("ليس لديك ما يكفي من النجوم لإتمام هذه العملية.");
             }
             closeModal();
         }
