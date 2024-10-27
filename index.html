@@ -203,6 +203,9 @@
             if (localStorage.getItem('stars') === null) {
                 localStorage.setItem('stars', 10000);
             }
+            if (localStorage.getItem('points') === null) {
+                localStorage.setItem('points', 0);
+            }
             updateStarsDisplay();
         }
 
@@ -227,9 +230,10 @@
                 totalPoints += pointsToBuy;
                 localStorage.setItem('points', totalPoints);
 
-                let myWalletStars = parseInt(localStorage.getItem('myWalletStars')) || 0;
-                myWalletStars += starsRequired;
-                localStorage.setItem('myWalletStars', myWalletStars);
+                // تحديث عدد النقاط في الكود الأساسي
+                if (window.updatePointsDisplay) {
+                    window.updatePointsDisplay(totalPoints);
+                }
 
                 showNotification(`You have purchased ${pointsToBuy} points! You now have ${totalPoints.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} points and ${totalStars.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} stars left.`);
                 updateStarsDisplay();
